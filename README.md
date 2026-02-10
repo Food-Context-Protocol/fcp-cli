@@ -130,7 +130,7 @@ uv sync --all-extras --dev
 # Run locally
 uv run fcp --help
 
-# Run tests (100% coverage, 1171 tests)
+# Run tests (100% coverage, 1,224 tests)
 uv run pytest
 
 # Format and lint
