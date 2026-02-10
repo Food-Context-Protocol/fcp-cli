@@ -15,7 +15,7 @@ Command-line interface for the [Food Context Protocol](https://fcp.dev) - an ope
 
 ```bash
 # Install
-pip install fcp-cli
+uv add fcp-cli
 
 # Configure (just need server URL)
 export FCP_SERVER_URL=https://api.fcp.dev
