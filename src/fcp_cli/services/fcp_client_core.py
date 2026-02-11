@@ -79,6 +79,7 @@ class FcpClientCore:
             self._client = httpx.AsyncClient(
                 timeout=self.timeout,
                 headers=headers,
+                verify=True,
                 limits=httpx.Limits(
                     max_connections=20,  # Total connection pool
                     max_keepalive_connections=10,  # Keep connections alive

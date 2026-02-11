@@ -1,5 +1,6 @@
 """Research agent for deep food research using Pydantic AI."""
 
+import logging
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -8,6 +9,10 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
 
 from fcp_cli.config import settings
+
+logger = logging.getLogger(__name__)
+
+MAX_QUESTION_LENGTH = 2000
 
 # Type alias for the research agent
 ResearchAgentType = Agent[Any, Any]
@@ -118,7 +123,19 @@ class ResearchAgent:
         Returns:
             Structured research result
         """
-        async with httpx.AsyncClient() as client:
+        if len(question) > MAX_QUESTION_LENGTH:
+            logger.warning("Research question truncated from %d to %d chars", len(question), MAX_QUESTION_LENGTH)
+            question = question[:MAX_QUESTION_LENGTH]
+
+        headers = {"User-Agent": "FCP-CLI/1.0"}
+        if settings.fcp_auth_token:
+            headers["Authorization"] = f"Bearer {settings.fcp_auth_token}"
+
+        async with httpx.AsyncClient(
+            verify=True,
+            timeout=30.0,
+            headers=headers,
+        ) as client:
             deps = ResearchDependencies(
                 fcp_url=self.fcp_url,
                 user_id=self.user_id,
