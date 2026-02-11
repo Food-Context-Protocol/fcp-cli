@@ -6,6 +6,7 @@ import asyncio
 import logging
 import random
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -67,7 +68,12 @@ class FcpClientCore:
                 "X-Client-Type": "cli",
             }
             if self.auth_token:
-                headers["Authorization"] = f"Bearer {self.auth_token}"
+                parsed = urlparse(self.base_url)
+                is_secure = parsed.scheme == "https" or parsed.hostname in ("localhost", "127.0.0.1", "::1")
+                if is_secure:
+                    headers["Authorization"] = f"Bearer {self.auth_token}"
+                else:
+                    logger.warning("Refusing to send auth token over insecure HTTP to %s", parsed.hostname)
 
             # Optimized HTTP client with connection pooling and HTTP/2
             self._client = httpx.AsyncClient(
