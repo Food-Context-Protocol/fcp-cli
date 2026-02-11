@@ -100,6 +100,14 @@ class TestFcpClientCoreClientManagement:
         await client.close()
 
     @pytest.mark.asyncio
+    async def test_get_client_refuses_auth_over_insecure_http(self):
+        """Test that auth token is NOT sent over insecure HTTP."""
+        client = FcpClientCore(base_url="http://evil.example.com", auth_token="secret")
+        httpx_client = await client._get_client()
+        assert "Authorization" not in httpx_client.headers
+        await client.close()
+
+    @pytest.mark.asyncio
     async def test_get_client_recreates_after_close(self):
         """Test _get_client creates new client after close."""
         client = FcpClientCore()

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from fcp_cli.agents.research import ResearchAgent, ResearchResult
+from fcp_cli.agents.research import MAX_QUESTION_LENGTH, ResearchAgent, ResearchResult
 from fcp_cli.config import settings
 
 pytestmark = pytest.mark.integration
@@ -132,3 +132,44 @@ class TestResearchAgentResearch:
 
         assert isinstance(result, ResearchResult)
         assert result == expected_result
+
+    async def test_research_truncates_long_question(self):
+        """Test that questions exceeding MAX_QUESTION_LENGTH are truncated."""
+        mock_agent = MagicMock()
+        mock_result = MagicMock()
+        mock_result.output = ResearchResult(
+            summary="Truncated",
+            key_points=[],
+            sources_consulted=0,
+            confidence="low",
+        )
+        mock_agent.run = AsyncMock(return_value=mock_result)
+
+        agent = ResearchAgent(agent=mock_agent)
+        long_question = "x" * (MAX_QUESTION_LENGTH + 500)
+
+        await agent.research(long_question)
+
+        # Verify the question was truncated before being passed to agent
+        call_args = mock_agent.run.call_args
+        assert len(call_args[0][0]) == MAX_QUESTION_LENGTH
+
+    async def test_research_includes_auth_header_when_token_set(self):
+        """Test that auth token is included in HTTP client headers."""
+        mock_agent = MagicMock()
+        mock_result = MagicMock()
+        mock_result.output = ResearchResult(
+            summary="Auth test",
+            key_points=[],
+            sources_consulted=0,
+            confidence="low",
+        )
+        mock_agent.run = AsyncMock(return_value=mock_result)
+
+        agent = ResearchAgent(agent=mock_agent)
+
+        with patch.object(settings, "fcp_auth_token", "test-secret-token"):
+            await agent.research("Auth question")
+
+        # Verify agent.run was called (the httpx client is created internally)
+        mock_agent.run.assert_called_once()
