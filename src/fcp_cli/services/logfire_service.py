@@ -40,7 +40,8 @@ def configure_logfire() -> bool:
     )
 
     # Instrument httpx for HTTP request tracing
-    logfire.instrument_httpx()
+    # Exclude Authorization headers to prevent token leakage to Logfire cloud
+    logfire.instrument_httpx(capture_headers=False)
 
     _initialized = True
     return True
